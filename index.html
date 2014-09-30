@@ -1,0 +1,376 @@
+<!DOCTYPE html PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<!-- saved from url=(0040)http://rybkina.1gb.ru/CA_Homework_1.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <title>
+         Computer Algebra. Rybakova A.S.
+      </title>
+   <meta charset="utf-8">
+   <script src="./index_files/jquery-2.1.1.min.js"></script>
+   <script src="./index_files/d3.v3.min.js"></script>
+   <style>
+
+       .node circle {
+           fill: #fff;
+           stroke: steelblue;
+           stroke-width: 3px;
+       }
+
+       .node text { font: 12px sans-serif; }
+
+       .link {
+           fill: none;
+           stroke: #ccc;
+           stroke-width: 2px;
+       }
+   </style>
+   </head>
+<body>
+<p>Input your expression:</p>
+
+
+<input type="text" id="field" class="custom" size="100" autofocus="">
+<input type="button" id="parse_but" onclick="Proverka()" value="Parse It">
+<input type="button" id="reset_but" onclick="Clear()" value="Clear">
+<p id="output"></p>
+
+<script>
+$(document).ready(function(){
+    $('#field').keypress(function(e){
+        if(e.keyCode==13)
+            $('#parse_but').click();
+        if(e.keyCode==27)
+            $('#reset_but').click();
+    });
+});
+</script>
+
+<script language="javascript" type="text/javascript">
+
+
+
+ function Alpha(symbol) {
+    return (((symbol >= 'a') && (symbol <= 'z')) || ((symbol >= 'A') && (symbol <= 'Z')));
+ }
+
+ function Number(symbol) {
+    return (((symbol >= '0') && (symbol <= '9')) || (symbol == '.'));
+ }
+ 
+ function OpenBracket(symbol) {
+	return (symbol == '(');
+ }
+ 
+ function CloseBracket (symbol) {
+	return (symbol == ')');
+ }
+ 
+ 
+ function Bracket(symbol) {
+	return (OpenBracket(symbol) || CloseBracket(symbol));
+ }
+ 
+ function MathOperation(symbol) {
+	return ((symbol == '+') || (symbol == '-') || (symbol == '*') || (symbol == '/') || (symbol == "^"))
+ }
+ 
+  function MathOperationExceptMinus(symbol) {
+	return ((symbol == '+') || (symbol == '*') || (symbol == '/') || (symbol == "^"))
+ }
+ 
+ function Correct (symbol) {
+	return (Alpha(symbol) || Number(symbol) || MathOperation(symbol) || Bracket(symbol));
+ }
+ 
+ function Error () {
+	var y = "Error!!! Please, check your expression";
+	document.write (y) 
+	return false;
+}
+
+   
+function Priority (symbol) {   // ���������� ���������� �������� 
+  if((symbol == '(') || (symbol == ')'))
+    return 0; 
+  if((symbol == '+') || (symbol == '-'))
+    return 1; 
+  if((symbol == '*') || (symbol == '/'))
+    return 2;  
+  if(symbol == '^') 
+    return 3;
+}	
+
+ function Proverka() {
+
+	d3.select("svg").remove();
+    document.getElementById("output").style.color = 'red';
+    document.getElementById("output").innerHTML = '';
+    var str_chisl = document.getElementById("field").value;
+	var errorMessage = "OK";
+	var bracket_number=0;
+	var symbol;
+	var openbr=0;
+	var correctExpr= true;
+
+	for (i = 0; (i < str_chisl.length) && Correct(str_chisl[i]); i++) {  // ���������� ������
+		if (OpenBracket(str_chisl[i])) {bracket_number++;}
+		if (CloseBracket(str_chisl[i])) {bracket_number--;}
+		if ((i == 0) && (CloseBracket(str_chisl[i]) || MathOperationExceptMinus(str_chisl[i]))) {
+		    correctExpr=Error ();
+            break;
+		}
+		
+		if ((i == str_chisl.length - 1) && (OpenBracket(str_chisl[i]) || MathOperation(str_chisl[i]))) {
+		    correctExpr=Error ();
+            break;
+		}
+		
+	}
+	
+	if  (bracket_number != 0) correctExpr=false;
+
+	for (i = 0; (i < str_chisl.length) && correctExpr; i++) {
+		if (!Correct(str_chisl[i])) {
+            correctExpr=Error ();
+            break;
+        }
+		
+		if (OpenBracket(str_chisl[i])) {
+		    openbr++;
+			if (i == (str_chisl.length - 1) || CloseBracket(str_chisl[i+1]) || (str_chisl[i+1] == '*') || (str_chisl[i+1] == '+') || (str_chisl[i+1] == '/')){ 
+				correctExpr=Error ();
+				break;
+			}
+			if ((i!= 0) && !(MathOperation(str_chisl[i-1]) || CloseBracket(str_chisl[i-1]))) {
+				correctExpr=Error ();
+				break;
+			}		
+        }
+		
+		if ((i != str_chisl-1) && (MathOperation(str_chisl[i])) && (MathOperation(str_chisl[i+1]))){
+			correctExpr=Error ();
+			break;
+		}
+		
+		if ((i != str_chisl-1) && (OpenBracket(str_chisl[i])) && (MathOperationExceptMinus(str_chisl[i+1]))){
+			correctExpr=Error ();
+			break;
+		}
+		
+		if ((i != str_chisl-1) && (Alpha(str_chisl[i])) && (Number(str_chisl[i+1]))){
+			correctExpr=Error ();
+			break;
+		}
+		
+		if ((i != str_chisl-1) && (Number(str_chisl[i])) && (Alpha(str_chisl[i+1]))){
+			correctExpr=Error ();
+			break;
+		}
+		
+		if ((i != str_chisl-1) && (Alpha(str_chisl[i])) && (Alpha(str_chisl[i+1]))){
+			correctExpr=Error ();
+			break;
+		}
+       
+		if (CloseBracket(str_chisl[i])){
+			if ((openbr == 0) ||  !(Alpha(str_chisl[i-1]) || Number(str_chisl[i-1]) || CloseBracket(str_chisl[i-1]))){ 
+				correctExpr=Error ();
+				break;
+			}			
+			if ((i != (str_chisl.length - 1)) && !(MathOperation(str_chisl[i+1]) || CloseBracket(str_chisl[i+1]))) {
+				correctExpr=Error ();
+				break;
+			}
+			
+			if (!correctExpr)
+				break;
+		}
+    }
+
+	var RPN = []
+	//type == 1 -> operator
+	//type == 0 -> value
+    if (correctExpr == true){
+		var Stack = [];
+		//var Expression = [];
+		//var ch = "";
+		
+		
+        for (i = 0; i < str_chisl.length; i++) {
+			if (MathOperation(str_chisl[i])) {
+			
+				if ((i == 0) || OpenBracket(str_chisl[i-1])) //
+					RPN.push({"name":0, "parent":-1, "child_count":0, "type":0});
+			
+				while (Stack.length && (Priority(Stack[Stack.length-1]) >= Priority(str_chisl[i]))) {
+					var ch=Stack.pop();
+					RPN.push({"name":ch, "parent":-1, "child_count":0, "type":1});
+				}
+				Stack.push(str_chisl[i]);
+			}
+				
+			if (OpenBracket(str_chisl[i])) {
+				Stack.push(str_chisl[i]);
+			}
+			
+			if (CloseBracket(str_chisl[i])) {	
+				var ch =  Stack.pop();
+				while (!OpenBracket(ch)){
+					RPN.push({"name":ch, "parent":-1, "child_count":0, "type":1});
+					ch =  Stack.pop(); 
+				}
+			}
+			
+			 if (Alpha(str_chisl[i])) {
+				RPN.push({"name": str_chisl[i], "parent":-1, "child_count":0, "type":0});
+            }
+			
+			if (Number(str_chisl[i])) {
+				var num="";
+				num+=str_chisl[i];
+				i++;
+				while (Number(str_chisl[i])) {
+					num+=str_chisl[i];
+					i++;
+				}
+				i--;
+			
+				for (j=0; j<num.length; j++) {
+					var kol=0;
+					if (num[j] == '.') kol++;
+					if (kol > 1) { 
+						Error();
+						break;
+					}
+					if (num[length-1] == '.')
+					num+="0";
+				}
+				RPN.push({"name": num, "parent":-1, "child_count":0, "type":0});
+			}
+		}
+		while (Stack.length){
+			var ch = Stack.pop()
+			RPN.push({"name":ch, "parent":-1, "child_count":0, "type":1});
+		}
+	}
+			
+	//���������� ������
+	var element = RPN.length-2;
+	var elementDad = RPN.length-1;
+	while (element >= 0){
+	
+		if (RPN[element].type == 0) {
+			(RPN[elementDad].children || (RPN[elementDad].children = [])).unshift(RPN[element]);
+			RPN[elementDad].child_count++;
+			RPN[element].parent = elementDad;
+			RPN[element].child_count = 2;
+		}
+		
+		if (RPN[element].type == 1) {
+			(RPN[elementDad].children || (RPN[elementDad].children = [])).unshift(RPN[element]);
+			RPN[elementDad].child_count++;
+			RPN[element].parent = elementDad;
+			elementDad=element;
+		}
+	
+		while ((elementDad != -1) && (RPN[elementDad].child_count == 2))
+			elementDad = RPN[elementDad].parent;
+		element--;
+	}
+	
+	if (!correctExpr)
+        document.getElementById("output").innerHTML = errorMessage;
+
+// ************** Generate the tree diagram *****************
+    var margin = {top: 30, right: 0, bottom: 0, left: 0},
+            width = 1000 - margin.right - margin.left,
+            height = 600 - margin.top - margin.bottom;
+    var i = 0;
+
+    var tree = d3.layout.tree()
+            .size([height, width]);
+
+    var diagonal = d3.svg.diagonal()
+            .projection(function (d) {
+                return [d.x, d.y];
+            });
+
+    var svg = d3.select("body").append("svg")
+            .attr("width", width + margin.right + margin.left)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    root = RPN[RPN.length-1];
+    update(root);
+
+    function update(source) {
+
+// Compute the new tree layout.
+        var nodes = tree.nodes(root).reverse(),
+                links = tree.links(nodes);
+
+// Normalize for fixed-depth.
+        nodes.forEach(function (d) {
+            d.y = d.depth * 100;
+        });
+
+// Declare the nodes?
+        var node = svg.selectAll("g.node")
+                .data(nodes, function (d) {
+                    return d.id || (d.id = ++i);
+                });
+
+// Enter the nodes.
+        var nodeEnter = node.enter().append("g")
+                .attr("class", "node")
+                .attr("transform", function (d) {
+                    return "translate(" + d.x + "," + d.y + ")";
+                });
+
+        nodeEnter.append("circle")
+                .attr("r", 10)
+                .style("fill", "#fff");
+
+        nodeEnter.append("text")
+//.attr("y", function(d) {
+//return d.children || d._children ? -18 : 18; })
+                .attr("dy", ".35em")
+                .attr("text-anchor", "middle")
+                .text(function (d) {
+                    return d.name;
+                })
+//.style("fill-opacity", 1);
+
+// Declare the links?
+        var link = svg.selectAll("path.link")
+                .data(links, function (d) {
+                    return d.target.id;
+                });
+
+// Enter the links.
+        link.enter().insert("path", "g")
+                .attr("class", "link")
+                .attr("d", diagonal);
+
+    }
+    if (!correctExpr) {
+        d3.select("svg").remove();
+    }
+}
+
+function Clear() {
+    document.getElementById("field").value = '';
+    document.getElementById("output").innerHTML = '';
+    text = '';
+    d3.select("svg").remove();
+
+}
+
+</script>
+
+
+
+		
+			
+			
+</body></html>
