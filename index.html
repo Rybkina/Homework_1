@@ -25,6 +25,11 @@
    </style>
    </head>
 <body>
+
+<p align="right"><input type='button' value='сохранить' onclick = "SaveHistory()"/>
+		<a href="showhist.php">история</a></p>
+		<br><br>
+		
 <p>Input your expression:</p>
 
 
@@ -46,7 +51,12 @@ $(document).ready(function(){
 
 <script language="javascript" type="text/javascript">
 
-
+function SaveHistory() {
+		req = document.getElementById("field").value;
+		if (req != '') {
+			link = 'SaveHistory.php?request="' + req + '"';
+			window.location.href=link;
+		}
 
  function Alpha(symbol) {
     return (((symbol >= 'a') && (symbol <= 'z')) || ((symbol >= 'A') && (symbol <= 'Z')));
